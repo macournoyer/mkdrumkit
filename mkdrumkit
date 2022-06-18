@@ -1,0 +1,138 @@
+#!/usr/bin/env ruby
+require "pathname"
+require "json"
+require "fileutils"
+require "pp"
+require "set"
+
+KIT_JSON = ARGV[0] || abort("usage: ./mkdrumkit kits/KIT_NAME.json")
+KITS_DIR = Pathname.new(File.expand_path("kits"))
+SILENCE_WAV = File.expand_path("silence.wav")
+
+class Set
+	def sample
+	    to_a[Kernel.rand(size)]
+	end
+end
+
+class Pads
+	attr_reader :config
+
+	def initialize(config_file)
+		@config_file = Pathname(config_file)
+		@config = JSON.load(@config_file.read)
+	end
+
+	def name
+		@config_file.basename('.json')
+	end
+
+	def source
+		Pathname.new(@config["source"]).expand_path
+	end
+
+	def layout
+		@layout ||= @config["layout"].map do |row|
+			row.map do |pad|
+				Pathname.new(pad.split("/").map { |part| "#{@config["prefix"]}#{part}" }.join("/"))
+			end
+		end
+	end
+
+	def values
+		@values ||= layout.flatten.uniq
+	end
+
+	# Pick a random file for each pad, respecting the layout. Attempts to never pick the same one twice.
+	def pick
+		picked = Set.new
+		@config["kits"].times.map do
+			layout.map do |row|
+				row.map do |pad|
+					files = Set.new(pad.glob("*.wav"))
+					sampled = (files - picked).sample || files.sample
+					picked << sampled
+					sampled
+				end
+			end
+		end.flatten
+	end
+end
+
+class Kit
+	attr_reader :name
+
+	def initialize(name, files)
+		@name = name
+		@files = files
+	end
+
+	def to_ffmpeg_input
+		@files.map do |file|
+			"file '#{file}'"
+		end.join("\nfile 'silence.wav'\n")
+	end
+
+	def basename
+		"#{name}.wav"
+	end
+
+	def destination
+		KITS_DIR.join(basename)
+	end
+
+	def make!
+		FileUtils.cp(SILENCE_WAV, "silence.wav")
+		File.write("kit.txt", to_ffmpeg_input)
+		sh "ffmpeg -y -f concat -i kit.txt -codec copy output.wav"
+		FileUtils.mv("output.wav", destination)
+	ensure
+		File.delete("kit.txt")
+		File.delete("silence.wav")
+	end
+end
+
+pads = Pads.new(KIT_JSON)
+Dir.chdir(pads.source)
+
+def sh(*args)
+	puts args.join(" ")
+	system(*args, out: $stdout, err: $stderr)
+end
+
+def list_entries(dir, only_directories: false, recurse: true)
+	dir = Pathname(dir)
+	out = "\n\n"
+
+	entries = if recurse
+		dir.glob("**/*")
+	else
+		dir.glob("*")
+	end
+	entries.select!(&:directory?) if only_directories
+
+	entries.each do |entry|
+		out << "\t#{entry}\n"
+	end
+		
+	out << "\n"
+	out
+end
+
+# Validate all pad values
+pads.values.each do |value|
+	unless value.directory?
+		abort "#{value} is not a directory. Directories are:" + list_entries(".", only_directories: true, recurse: true)
+	end
+	if value.glob("*.wav").empty?
+		abort "#{value} does not contain any .wav files, it contains:" + list_entries(value, recurse: false)
+	end
+end
+
+files = pads.pick
+# files.pop # Gotta keep 1 pad free on Koala
+kit = Kit.new(pads.name, files)
+kit.make!
+puts "Generated kit for #{files.size} chops in #{kit.destination}"
+
+sh "open #{KITS_DIR}"

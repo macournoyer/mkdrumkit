@@ -1,0 +1,10 @@
+{
+	"source": "~/Splice/sounds/packs/Reworked Soul Selections/SKU#SM-1010-FL-R_-_Resampled_Soul_Selections_-_WAV/one-shots/drum_one-shots",
+	"kits": 4,
+	"layout": [
+		["kick", "kick", "kick", "kick"],
+		["snare", "snare", "claps", "claps"],
+		["hats", "hats", "hats", "cymbals"],
+		["percussion", "percussion", "percussion", "percussion"]
+	]
+}

@@ -1,0 +1,11 @@
+{
+	"source": "~/Splice/sounds/packs/DECAP - Drums That Knock Vol. 9/DECAP_sample_pack/DECAP_drums/DECAP_drum_one_shots",
+	"prefix": "DECAP_",
+	"kits": 4,
+	"layout": [
+		["kicks", "kicks", "kicks", "kicks"],
+		["snares", "snares", "claps", "claps"],
+		["hihats/closed_hihats", "hihats/closed_hihats", "hihats/open_hihats", "shakers"],
+		["percussion", "percussion", "percussion", "percussion"]
+	]
+}
