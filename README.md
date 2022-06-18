@@ -2,7 +2,31 @@
 
 Say you have WAV files containing individual sounds (kick, snare, hi-hats). Importing them one by one in something like [Koala](https://www.koalasampler.com/), is dedious, slow, and boring.
 
-This small utility, will concat individual audio files into a single audio file. Each one will be seperated by a silence, making it super easy to auto-chop in Koala, and such.
+This small utility is designed to generate random combinations to play on pads.
+
+You define the layout you want for your pads. Say the usual 4x4 grid:
+
+| | | | |
+| - | - | - | - |
+| kick | kick | kick | kick |
+| snare | snare | clap | clap |
+| hi-hat | hi-hat | open-hat | cymbal |
+| shakers | shakers | bass | chord |
+
+Then feed it a root directory containing sub-directories for each sound:
+
+```
+ROOT
+  kick
+    kick1.wav
+    kick2.wav
+  snare
+    funkysnare.wav
+  hi-hat
+    ...
+```
+
+It will create random combinations for each type of sound. Then, concat each audio files into a single audio file. Each one seperated by a silence, making it super easy to auto-chop in Koala, and such.
 
 ## Usage
 
